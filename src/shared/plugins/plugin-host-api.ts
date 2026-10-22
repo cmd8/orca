@@ -21,7 +21,9 @@ export const PANEL_ACTION_TEXT_MAX_LENGTH = 4096
 export const PLUGIN_WORKSPACE_TERMINAL_LIMIT = 50
 export const PLUGIN_WORKSPACE_LABEL_MAX_LENGTH = 512
 export const PLUGIN_TERMINAL_ID_MAX_LENGTH = 1024
+export const PLUGIN_TERMINAL_AGENT_MAX_LENGTH = 64
 
+const terminalIdSchema = z.string().min(1).max(PLUGIN_TERMINAL_ID_MAX_LENGTH)
 const workspaceReadContextParams = z.object({}).strict().optional()
 const workspaceReadContextResult = z
   .object({
@@ -33,13 +35,24 @@ const workspaceReadContextResult = z
       .array(
         z
           .object({
-            id: z.string().min(1).max(PLUGIN_TERMINAL_ID_MAX_LENGTH)
+            id: terminalIdSchema,
+            /** Agent Orca observed in the terminal (e.g. `claude`); null when unknown. */
+            agent: z.string().min(1).max(PLUGIN_TERMINAL_AGENT_MAX_LENGTH).nullable()
           })
           .strict()
       )
-      .max(PLUGIN_WORKSPACE_TERMINAL_LIMIT)
+      .max(PLUGIN_WORKSPACE_TERMINAL_LIMIT),
+    /** Read-only: the focused pane of the active tab, always one of `terminals`.
+     *  Null when that tab is not a terminal or its pane is not listed. */
+    activeTerminalId: terminalIdSchema.nullable()
   })
   .strict()
+  .refine(
+    (context) =>
+      context.activeTerminalId === null ||
+      context.terminals.some((terminal) => terminal.id === context.activeTerminalId),
+    'activeTerminalId must be one of terminals'
+  )
   .nullable()
 
 const terminalSendTextParams = z.object({

@@ -1,6 +1,7 @@
 import {
   getPluginHostMethodSpec,
   PLUGIN_HOST_API_V0,
+  PLUGIN_TERMINAL_AGENT_MAX_LENGTH,
   PLUGIN_TERMINAL_ID_MAX_LENGTH,
   PLUGIN_WORKSPACE_LABEL_MAX_LENGTH,
   PLUGIN_WORKSPACE_TERMINAL_LIMIT,
@@ -18,7 +19,10 @@ export type PluginWorktreeContext = {
  *  over runtime services; relay policy and conformance tests bind fakes. */
 export type PluginHostServices = {
   resolveActiveWorktreeContext(): Promise<PluginWorktreeContext | null>
-  listWorktreeTerminals(worktreeId: string): Promise<{ id: string }[]>
+  /** `active` marks the focused pane of the worktree's active tab. */
+  listWorktreeTerminals(
+    worktreeId: string
+  ): Promise<{ id: string; agent: string | null; active: boolean }[]>
   sendTerminalText(
     terminalId: string,
     action: { text: string; enter: boolean }
@@ -74,19 +78,25 @@ const HANDLERS = new Map<string, BoundPluginHostMethod>([
     if (!context) {
       return null
     }
-    const terminals = await services.listWorktreeTerminals(context.worktreeId)
+    const terminals = (await services.listWorktreeTerminals(context.worktreeId))
+      .filter(
+        (terminal) => terminal.id.length > 0 && terminal.id.length <= PLUGIN_TERMINAL_ID_MAX_LENGTH
+      )
+      .slice(0, PLUGIN_WORKSPACE_TERMINAL_LIMIT)
     // Why: Orca worktree ids embed provider paths, so the public projection
     // must select safe fields instead of spreading the internal context.
     return {
       branch: context.branch.slice(0, PLUGIN_WORKSPACE_LABEL_MAX_LENGTH),
       displayName: context.displayName.slice(0, PLUGIN_WORKSPACE_LABEL_MAX_LENGTH),
-      terminals: terminals
-        .filter(
-          (terminal) =>
-            terminal.id.length > 0 && terminal.id.length <= PLUGIN_TERMINAL_ID_MAX_LENGTH
-        )
-        .slice(0, PLUGIN_WORKSPACE_TERMINAL_LIMIT)
-        .map((terminal) => ({ id: terminal.id }))
+      terminals: terminals.map((terminal) => ({
+        id: terminal.id,
+        // Why: an agent id is compared exactly, so an oversized one is dropped, never cut.
+        agent:
+          terminal.agent && terminal.agent.length <= PLUGIN_TERMINAL_AGENT_MAX_LENGTH
+            ? terminal.agent
+            : null
+      })),
+      activeTerminalId: terminals.find((terminal) => terminal.active)?.id ?? null
     }
   }),
   definePluginMethod('terminal.sendText', async (params, { services }) => {
