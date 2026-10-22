@@ -19,10 +19,9 @@ export type PluginWorktreeContext = {
  *  over runtime services; relay policy and conformance tests bind fakes. */
 export type PluginHostServices = {
   resolveActiveWorktreeContext(): Promise<PluginWorktreeContext | null>
-  /** `active` marks the focused pane of the worktree's active tab. */
   listWorktreeTerminals(
     worktreeId: string
-  ): Promise<{ id: string; agent: string | null; active: boolean }[]>
+  ): Promise<{ id: string; agent: string | null; isActivePane: boolean }[]>
   sendTerminalText(
     terminalId: string,
     action: { text: string; enter: boolean }
@@ -72,6 +71,10 @@ function definePluginMethod(
   return [name, { spec, handler }]
 }
 
+function wholeAgentIdOrNull(agent: string | null): string | null {
+  return agent && agent.length <= PLUGIN_TERMINAL_AGENT_MAX_LENGTH ? agent : null
+}
+
 const HANDLERS = new Map<string, BoundPluginHostMethod>([
   definePluginMethod('workspace.readContext', async (_params, { services }) => {
     const context = await services.resolveActiveWorktreeContext()
@@ -90,13 +93,9 @@ const HANDLERS = new Map<string, BoundPluginHostMethod>([
       displayName: context.displayName.slice(0, PLUGIN_WORKSPACE_LABEL_MAX_LENGTH),
       terminals: terminals.map((terminal) => ({
         id: terminal.id,
-        // Why: an agent id is compared exactly, so an oversized one is dropped, never cut.
-        agent:
-          terminal.agent && terminal.agent.length <= PLUGIN_TERMINAL_AGENT_MAX_LENGTH
-            ? terminal.agent
-            : null
+        agent: wholeAgentIdOrNull(terminal.agent)
       })),
-      activeTerminalId: terminals.find((terminal) => terminal.active)?.id ?? null
+      activeTerminalId: terminals.find((terminal) => terminal.isActivePane)?.id ?? null
     }
   }),
   definePluginMethod('terminal.sendText', async (params, { services }) => {

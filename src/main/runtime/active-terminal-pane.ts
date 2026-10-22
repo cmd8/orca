@@ -2,11 +2,6 @@ import type { RuntimeMobileSessionTabsSnapshot } from '../../shared/runtime-sess
 
 export type ActiveTerminalPane = { tabId: string; leafId: string }
 
-/**
- * The pane the user works in: the published active surface of the worktree. The window
- * publishes the active tab of the tab group the user last focused, and a split terminal tab
- * publishes one surface per pane, so this surface is already the focused leaf.
- */
 export function resolveActiveTerminalPane(
   snapshot: RuntimeMobileSessionTabsSnapshot | undefined
 ): ActiveTerminalPane | null {

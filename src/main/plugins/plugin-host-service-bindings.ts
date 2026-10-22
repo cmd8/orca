@@ -63,7 +63,7 @@ export function bindPluginHostServices(input: {
       return result.terminals.slice(0, PLUGIN_WORKSPACE_TERMINAL_LIMIT).map((terminal) => ({
         id: terminal.handle,
         agent: terminal.agentIdentity ?? null,
-        active: terminal.tabId === activePane?.tabId && terminal.leafId === activePane.leafId
+        isActivePane: terminal.tabId === activePane?.tabId && terminal.leafId === activePane.leafId
       }))
     },
     sendTerminalText: async (terminalId, action) => {

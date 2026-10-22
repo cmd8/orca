@@ -36,14 +36,11 @@ const workspaceReadContextResult = z
         z
           .object({
             id: terminalIdSchema,
-            /** Agent Orca observed in the terminal (e.g. `claude`); null when unknown. */
             agent: z.string().min(1).max(PLUGIN_TERMINAL_AGENT_MAX_LENGTH).nullable()
           })
           .strict()
       )
       .max(PLUGIN_WORKSPACE_TERMINAL_LIMIT),
-    /** Read-only: the focused pane of the active tab, always one of `terminals`.
-     *  Null when that tab is not a terminal or its pane is not listed. */
     activeTerminalId: terminalIdSchema.nullable()
   })
   .strict()

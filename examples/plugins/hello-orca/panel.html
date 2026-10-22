@@ -100,8 +100,6 @@
               : terminal.id
             termsEl.appendChild(option)
           })
-          // Preselect the pane the user works in. With no active pane, select nothing so a
-          // send never falls back to whichever terminal happens to be listed first.
           termsEl.value = result.value.activeTerminalId || ''
           termsEl.hidden = result.value.terminals.length === 0
           sendEl.hidden = result.value.terminals.length === 0
