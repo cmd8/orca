@@ -247,6 +247,12 @@ test('runs hello-orca panel, command, and event behind visible consent', async (
         }
       })
       .toEqual({ activeTerminalId: null, terminalIds: [...handles].sort() })
+    await panel.getByRole('button', { name: 'Read workspace context' }).click()
+    await expect(panel.getByRole('combobox')).toHaveValue('')
+    const send = panel.getByRole('button', { name: /into selected terminal/ })
+    await expect(send).toBeDisabled()
+    await panel.getByRole('combobox').selectOption(handles[0]!)
+    await expect(send).toBeEnabled()
 
     createdWorktreeId = await createWorktree(orcaPage, `plugin-event-${Date.now()}`)
     await expect
