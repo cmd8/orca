@@ -94,9 +94,13 @@
           result.value.terminals.forEach(function (terminal) {
             var option = document.createElement('option')
             option.value = terminal.id
-            option.textContent = terminal.id
+            option.textContent = terminal.agent
+              ? terminal.id + ' (' + terminal.agent + ')'
+              : terminal.id
             termsEl.appendChild(option)
           })
+          // Preselect the pane the user works in; sending still names the id explicitly.
+          if (result.value.activeTerminalId) termsEl.value = result.value.activeTerminalId
           termsEl.hidden = result.value.terminals.length === 0
           document.getElementById('send').hidden = result.value.terminals.length === 0
         })
